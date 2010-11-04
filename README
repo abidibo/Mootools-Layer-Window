@@ -1,0 +1,13 @@
+------------------------------------------------------------------------------------
+Layer Window Mootools plugin
+------------------------------------------------------------------------------------
+This is a window layer class designed with mootools.
+The window is opened as a layer above the document. Can be dragged and resized.
+His content may be a DOM Element html content, a passed string or a ajax request
+response.
+
+This class uses the ajaxRequest function provided in ajax.js file.
+ 
+REQUIREMENTS
+Mootools core >= 1.2
+Mootools more Drag plugin

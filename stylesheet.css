@@ -1,0 +1,55 @@
+/* html5 */
+header, footer { 
+	display: block; 
+}
+
+div.abiWinOverlay { 
+	position: absolute; 
+	background: #000; 
+	opacity: 0.8; 
+	filter: alpha(opacity = 80); }
+
+div.abiWin {
+	position: absolute;
+	padding: 5px;
+	background-color: #e7e7e7;
+	border: 1px solid #000;
+	z-index: 10000;
+}
+
+div.abiWin header.abiHeader {
+	font-weight: bold;
+	text-align:center;
+	margin: 0 0 5px;	
+	min-height: 20px;
+}
+div.abiWin div.body {
+	clear: both;
+	text-align: left;
+	padding: 8px;
+	border: 1px solid #aaa;
+	background-color: #fff;
+	overflow: auto;
+}
+div.abiWin span.close {
+	background-color: #fff;
+       	border: 1px solid #000;
+	cursor: pointer;
+	padding: 2px;
+        position: absolute;
+       	right: 5px;
+       	top: 4px;
+	font-size:10px;
+}
+div.abiWin img.close {
+	cursor: pointer;
+	padding: 2px;
+        position: absolute;
+       	right: 5px;
+       	top: 4px;
+}
+div.abiWin footer {
+	text-align: center;
+	margin: 0px 0px;
+}
+
