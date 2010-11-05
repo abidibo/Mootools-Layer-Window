@@ -14,7 +14,7 @@
  * 	- height (int: default to null) The height in px of the body. By default its value depends on contained text
  *  	- minWidth (int: default to 300) The minimum width when resizing
  *	- minHeight (int: default to 100) The minimum height when resizing
- * 	- maxHeight (int: default to null) The max-height css property of the window body
+ * 	- maxHeight (int: default to viewport-height minus 100px) The max-height css property of the window body
  *	- draggable (bool: default to true) Whether or not to make the window draggable
  *	- resize (bool: default to true) Whether or not to make the window resizable
  *	- closeButtonUrl (string: default to null) The url of the image to use as close button
@@ -50,7 +50,8 @@
  *	1. url - (string) The url called by ajax request to get window body content
  *
  * layerWindow method: display
- *  displays the window in the position pointed by the element passed, or by the given coordinates
+ *  displays the window in the position pointed by the element passed, or by the given coordinates. If no element nor coordinates are given,
+ *  the window is centered in the viewport.
  *   Syntax
  *	myLayerWindowInstance.display(el, [opt]);
  *   Arguments
@@ -114,6 +115,7 @@ var layerWindow = new Class({
 		if($chk(this.options.html)) this.html = this.options.html;
 		if($chk(this.options.htmlNode)) this.htmlNode = $type(this.options.htmlNode)=='element' ? this.options.htmlNode : $(this.options.htmlNode);
 		if($chk(this.options.url)) this.url = this.options.url;
+		if(!$chk(this.options.maxHeight)) this.options.maxHeight = this.getViewport().height-100;
 
 		this.maxZindex = this.getMaxZindex();
 
@@ -137,10 +139,7 @@ var layerWindow = new Class({
 	display: function(element, opt) {
 		if(this.options.disableObjects) this.dObjects();
 		this.showing = true;
-		this.element = !element ? null : $type(element)=='element'? element:$(element);
-		var elementCoord = $chk(this.element) ? this.element.getCoordinates() : null;
-		this.top = (opt && $chk(opt.top)) ? opt.top < 0 ? 0 : opt.top : elementCoord ? elementCoord.top : (this.getViewport().cY-(this.options.height/2));
-		this.left = (opt && $chk(opt.left)) ? opt.left < 0 ? 0 : opt.left : elementCoord ? elementCoord.left : (this.getViewport.cX-(this.options.width/2));
+		
 		if(this.options.overlay) this.renderOverlay();
 		this.renderContainer();
 		this.renderHeader();
@@ -152,6 +151,21 @@ var layerWindow = new Class({
 
 		if(this.options.draggable) this.makeDraggable();
 		if(this.options.resize) this.makeResizable();
+
+		this.element = !element ? null : $type(element)=='element'? element:$(element);
+		var elementCoord = $chk(this.element) ? this.element.getCoordinates() : null;
+		this.top = (opt && $chk(opt.top)) ? opt.top < 0 ? 0 : opt.top : elementCoord 
+			? elementCoord.top 
+			: (this.getViewport().cY-this.container.getCoordinates().height/2);
+		this.left = (opt && $chk(opt.left)) ? opt.left < 0 ? 0 : opt.left : elementCoord 
+			? elementCoord.left 
+			: (this.getViewport().cX-this.container.getCoordinates().width/2);
+
+		this.container.setStyles({
+			'top': this.top+'px',
+			'left':this.left+'px',
+			'visibility': 'visible'
+		})
 
 	},
 	renderOverlay: function() {
@@ -195,10 +209,7 @@ var layerWindow = new Class({
 	renderContainer: function() {
 		this.container = new Element('div', {'id':this.options.id, 'class':'abiWin'});
 
-		this.container.setStyles({
-			'top': this.top+'px',
-			'left':this.left+'px'
-		})
+		this.container.setStyle('visibility', 'hidden');
 		this.setFocus();
 		this.container.addEvent('mousedown', this.setFocus.bind(this));
 		this.container.inject(document.body);
