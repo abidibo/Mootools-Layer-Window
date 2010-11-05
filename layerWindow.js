@@ -20,6 +20,7 @@
  *	- closeButtonUrl (string: default to null) The url of the image to use as close button
  *	- closeButtonLabel (string: default to close) The string to use as close button if the closeButtonUrl is null
  *	- destroyOnClose (bool: default to true) Whether or not to destroy all object properties when closing the window
+ *	- overlay (bool: default to true) Whether or not to set a base overlay with opacity isolating the window from the below elements
  *  	- url (string: default to null) The url to be called by ajax request to get initial window body content
  *	- htmlNode (mixed: default to null) The html node which content is injected into the window body. May be a node element or its id.
  *	- html (string: default to null) The initial html content of the window body if url is null
@@ -94,6 +95,7 @@ var layerWindow = new Class({
 		closeButtonUrl: null,
 		closeButtonLabel: 'close',
 		destroyOnClose: true,
+		overlay: true,
 		url:'',
 		html: ' ',
 		htmlNode: null,
@@ -139,6 +141,7 @@ var layerWindow = new Class({
 		var elementCoord = $chk(this.element) ? this.element.getCoordinates() : null;
 		this.top = (opt && $chk(opt.top)) ? opt.top < 0 ? 0 : opt.top : elementCoord ? elementCoord.top : (this.getViewport().cY-(this.options.height/2));
 		this.left = (opt && $chk(opt.left)) ? opt.left < 0 ? 0 : opt.left : elementCoord ? elementCoord.left : (this.getViewport.cX-(this.options.width/2));
+		if(this.options.overlay) this.renderOverlay();
 		this.renderContainer();
 		this.renderHeader();
 		this.renderBody();
@@ -151,6 +154,20 @@ var layerWindow = new Class({
 		if(this.options.resize) this.makeResizable();
 
 	},
+	renderOverlay: function() {
+		var docDim = document.getScrollSize();
+		this.overlay = new Element('div', {'class': 'abiWinOverlay'});
+		this.overlay.setStyles({
+			'top': '0px',
+			'left': '0px',
+			'width': docDim.x,
+			'height': docDim.y,
+			'z-index': ++this.maxZindex
+		});
+
+		this.overlay.inject(document.body);
+		
+	},	
 	dObjects: function() {
 		for(var i=0;i<window.frames.length;i++) {
 			var myFrame = window.frames[i];
@@ -263,6 +280,7 @@ var layerWindow = new Class({
 		this.showing = false;
 		if(this.options.disableObjects) this.chain(this.container.dispose(), this.eObjects());
 		else this.container.dispose();
+		if(this.options.overlay) this.overlay.dispose();
     		if($chk(this.options.closeCallback)) this.options.closeCallback(this.options.closeCallbackParam);		
 		if(this.options.destroyOnClose) for(var prop in this) this[prop] = null;
 	},
