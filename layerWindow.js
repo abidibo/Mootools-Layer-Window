@@ -27,6 +27,7 @@
  *	- closeCallback (function: default to null) The function to be called when the window is closed
  *	- closeCallbackParam (mixed: default to null) The paramether to pass to the callback function when the window is closed
  *	- disableObjects (bool: default to false) Whether or not to hide objects when window is showed (and show them when window is closed)
+ *	                                          objects cannot be disabled if in iframe with different domain content (due to same origin policy concept)
  *
  * layerWindow method: setTitle
  *  sets the title of the window and updates it if the window is showed
@@ -137,6 +138,10 @@ var layerWindow = new Class({
 		if(this.showing) this.request();
 	},
 	display: function(element, opt) {
+
+		this.delement = !element ? null : $type(element)=='element'? element:$(element);
+		this.dopt = opt;
+
 		if(this.options.disableObjects) this.dObjects();
 		this.showing = true;
 		
@@ -151,22 +156,7 @@ var layerWindow = new Class({
 
 		if(this.options.draggable) this.makeDraggable();
 		if(this.options.resize) this.makeResizable();
-
-		this.element = !element ? null : $type(element)=='element'? element:$(element);
-		var elementCoord = $chk(this.element) ? this.element.getCoordinates() : null;
-		this.top = (opt && $chk(opt.top)) ? opt.top < 0 ? 0 : opt.top : elementCoord 
-			? elementCoord.top 
-			: (this.getViewport().cY-this.container.getCoordinates().height/2);
-		this.left = (opt && $chk(opt.left)) ? opt.left < 0 ? 0 : opt.left : elementCoord 
-			? elementCoord.left 
-			: (this.getViewport().cX-this.container.getCoordinates().width/2);
-
-		this.container.setStyles({
-			'top': this.top+'px',
-			'left':this.left+'px',
-			'visibility': 'visible'
-		})
-
+	
 	},
 	renderOverlay: function() {
 		var docDim = document.getScrollSize();
@@ -185,9 +175,11 @@ var layerWindow = new Class({
 	dObjects: function() {
 		for(var i=0;i<window.frames.length;i++) {
 			var myFrame = window.frames[i];
-			var obs = myFrame.document.getElementsByTagName('object');
-			for(var ii=0; ii<obs.length; ii++) {
-				obs[ii].style.visibility='hidden';
+			if(this.sameDomain(myFrame)) {
+				var obs = myFrame.document.getElementsByTagName('object');
+				for(var ii=0; ii<obs.length; ii++) {
+					obs[ii].style.visibility='hidden';
+				}
 			}
 		}
 		$$('object').each(function(item) {
@@ -197,9 +189,11 @@ var layerWindow = new Class({
 	eObjects: function() {
 		for(var i=0;i<window.frames.length;i++) {
 			var myFrame = window.frames[i];
-			var obs = myFrame.document.getElementsByTagName('object');
-			for(var ii=0; ii<obs.length; ii++) {
-				obs[ii].style.visibility='visible';
+			if(this.sameDomain(myFrame)) {
+				var obs = myFrame.document.getElementsByTagName('object');
+				for(var ii=0; ii<obs.length; ii++) {
+					obs[ii].style.visibility='visible';
+				}
 			}
 		}
 		$$('object').each(function(item) {
@@ -213,6 +207,23 @@ var layerWindow = new Class({
 		this.setFocus();
 		this.container.addEvent('mousedown', this.setFocus.bind(this));
 		this.container.inject(document.body);
+	},
+	locateContainer: function() {
+	
+		var elementCoord = $chk(this.delement) ? this.delement.getCoordinates() : null;
+		this.top = (this.dopt && $chk(this.dopt.top)) ? this.dopt.top < 0 ? 0 : this.dopt.top : elementCoord 
+			? elementCoord.top 
+			: (this.getViewport().cY-this.container.getCoordinates().height/2);
+		this.left = (this.dopt && $chk(this.dopt.left)) ? this.dopt.left < 0 ? 0 : this.dopt.left : elementCoord 
+			? elementCoord.left 
+			: (this.getViewport().cX-this.container.getCoordinates().width/2);
+
+		this.container.setStyles({
+			'top': this.top+'px',
+			'left':this.left+'px',
+			'visibility': 'visible'
+		})
+
 	},
 	renderHeader: function() {
 		this.header = new Element('header', {'class':'abiHeader'});
@@ -241,6 +252,7 @@ var layerWindow = new Class({
 		})
 		this.body.inject(this.container, 'bottom');
 		$chk(this.url) ? this.request() : $chk(this.htmlNode) ? this.body.set('html', this.htmlNode.clone(true, true).get('html')) : this.body.set('html', this.html);
+		if(!$chk(this.url) || this.options.height) this.locateContainer();
 	},
 	renderFooter: function() {
 		this.footer = new Element('footer');
@@ -281,7 +293,7 @@ var layerWindow = new Class({
 		});	      
 	},
 	request: function() {
-		ajaxRequest('post', this.url, '', this.body, {'script':true, 'load':this.body});	 
+		ajaxRequest('post', this.url, '', this.body, {'script':true, 'load':this.body, 'callback':this.locateContainer.bind(this)});	 
 	},
 	setFocus: function() {
 		if(!this.container.style.zIndex || (this.container.getStyle('z-index').toInt() < this.maxZindex))
